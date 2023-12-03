@@ -1,5 +1,6 @@
 package pokemon.battler;
 import java.util.Scanner;
+import java.io.FileNotFoundException;
 import java.util.Random;
 /*TODO Figure out the Health glitch
 Add Items and Selection Screen
@@ -16,6 +17,10 @@ public class App {
     public static void main (String[] args) throws InterruptedException {
         // soundPlayer.playSound("app/src/main/resources/title-screen.midi");
         textManager.Title_Screen();
+        System.out.println("");
+        scanner.next();
+        try {textManager.prefightScreen();}
+        catch (FileNotFoundException e) {e.printStackTrace();}
         System.out.println("");
         scanner.next();
         textManager.initialize();

@@ -206,5 +206,9 @@ public class textManager {
         }
         System.out.println("");
     }
+    public static void prefightScreen() throws FileNotFoundException {
+        Scanner scanner = new Scanner(new File("app/src/main/resources/prefightScreen.txt"));
+        while(scanner.hasNextLine()) {System.out.println(scanner.nextLine());}
+    }
 }
 
