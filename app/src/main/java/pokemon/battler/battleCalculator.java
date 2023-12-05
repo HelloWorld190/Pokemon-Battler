@@ -7,17 +7,18 @@ import java.util.Random;
 
 public class battleCalculator {
     public static Random random = new Random();
+    public static ArrayList<effectTimer> timerList = new ArrayList<effectTimer>();
 
     public static void battleAndLogs(int pos) throws FileNotFoundException {
+        //fully implement confusion, why is self always giving move 0?
         boolean sAttackItself = false;
         boolean eAttackItself = false;
         Pokemon self = battleManager.playerTeam[battleManager.currentPokemon], 
             enemy = battleManager.pokemonList[battleManager.enemyPokemon];
         if (self.effect.contains(Status.NORMAL) && self.effect.size()==1) {self.skipTurn=false;}
         if (enemy.effect.contains(Status.NORMAL) && enemy.effect.size()==1) {enemy.skipTurn=false;}
-        Move selfMove = self.getMove(0), enemyMove;
-        if (!self.effect.contains(Status.CONFUSED)) {selfMove = self.getMove(pos);}
-        else {
+        Move selfMove = self.getMove(pos), enemyMove;
+        if (self.effect.contains(Status.CONFUSED)) {
             if (random.nextInt(2) == 0) {selfMove = self.getMove(random.nextInt(4));}
             else {sAttackItself = true;}
         }
@@ -37,11 +38,19 @@ public class battleCalculator {
             }
         }
         if (selfPriority > enemyPriority) {
-            textManager.printLogs(attack(self, enemy, selfMove));
-            if (enemyPriority!=-1) {textManager.printLogs(attack(enemy, self, enemyMove));}
+            if (sAttackItself){textManager.printLogs(attack(self, self, selfMove));}
+            else {textManager.printLogs(attack(self, enemy, selfMove));}
+            if (enemyPriority!=-1) {
+                if (eAttackItself){textManager.printLogs(attack(enemy, enemy, enemyMove));}
+                else {textManager.printLogs(attack(enemy, self, enemyMove));}
+            }
         } else if (enemyPriority > selfPriority) {
-            textManager.printLogs(attack(enemy, self, enemyMove));
-            if (selfPriority!=-1) {textManager.printLogs(attack(self, enemy, selfMove));};
+            if (eAttackItself){textManager.printLogs(attack(enemy, enemy, enemyMove));}
+            else {textManager.printLogs(attack(enemy, self, enemyMove));};
+            if (enemyPriority!=-1) {
+                if (sAttackItself){textManager.printLogs(attack(self, self, selfMove));}
+                else {textManager.printLogs(attack(self, enemy, selfMove));}
+            }
         }
         // if (enemy.skipTurn && self.skipTurn) {textManager.printLogs(arr);}
         // else if (enemy.skipTurn) {textManager.printLogs(attack(self, enemy, selfMove));} 
@@ -160,6 +169,16 @@ public class battleCalculator {
                 effectLogs.add(pokemon.name + " was frozen!");
                 persistantEffects.add(Status.FROZEN);
             }}
+            if (i==Status.CONFUSED) {
+                int times=0;
+                for (Status j : pokemon.effect) {if (j==Status.CONFUSED) {times++;}}
+                if (times>timerList.size()) {
+                    timerList.add(new effectTimer(Status.CONFUSED,
+                        random.nextInt(4)+1+effectTimer.turnNum));}
+                textManager.changeASCIICondition("CON", 
+                    pokemon == battleManager.pokemonList[battleManager.currentPokemon]);
+                effectLogs.add(pokemon.name + " is confused!");
+            }
             if (i == Status.DISABLED) {move.disabled = true; persistantEffects.add(Status.REENABLE);}
             if (i == Status.REENABLE) {move.disabled = false;}
             if (i == Status.NORMAL) {pokemon.skipTurn=false;}
@@ -179,6 +198,8 @@ public class battleCalculator {
         pokemon.sp_atk += statsMod[2];
         pokemon.sp_def += statsMod[3];
         pokemon.spd += statsMod[4];
+        for (effectTimer i : timerList) {
+            if(i.endEffect()) {pokemon.effect.remove(i.effect);}}
         return effectLogs;
     }
 

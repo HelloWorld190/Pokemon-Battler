@@ -185,6 +185,7 @@ public class battleManager {
                 textManager.screen = CurrentScreen.MAIN_BATTLE;
                 try {textManager.getTerminal();} 
                 catch (FileNotFoundException e) {e.printStackTrace();}
+                effectTimer.turnNum++;
                 posX = 0; posY = 1;
             }
             textManager.print();

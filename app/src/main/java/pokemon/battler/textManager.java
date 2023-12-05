@@ -34,6 +34,9 @@ public class textManager {
     private static final int switchMiddleColumn = 60;
     private static final int pokemonListColumn = 3;
 
+    private static String sASCIICondition = "";
+    private static String eASCIICondition = "";
+
     public static final String ANSI_BLACK = "\u001B[90m";
     public static final String ANSI_RED = "\u001B[31m";
     public static final String ANSI_GREEN = "\u001B[32m";
@@ -160,9 +163,11 @@ public class textManager {
         if (isSelf) {
             file[linesFr[3]] = file[linesFr[3]].substring(0,file[linesFr[3]].length()-4) + "_____";
             file[linesFr[4]] = file[linesFr[4]].substring(0,file[linesFr[4]].length()-4) + "|" + status + "|";
+            sASCIICondition = status;
         } else {
             file[linesEn[3]] = file[linesEn[3]].substring(0,file[linesEn[3]].length()-4) + "_____";
             file[linesEn[4]] = file[linesEn[4]].substring(0,file[linesEn[4]].length()-4) + "|" + status + "|";
+            eASCIICondition = status;
         }
     }
     public static void getTerminal(Pokemon pokemon,int pos) throws FileNotFoundException {
@@ -295,16 +300,18 @@ public class textManager {
         Scanner scanner = new Scanner(new File("app/src/main/resources/Battle_Screen.txt"));
         for (int i = 0; i < 0; i++) {scanner.nextLine();}
         for (int i = 0; i < terminalStart+terminalLength; i++) {file[i] = scanner.nextLine();}
-        textManager.changeASCII(battleManager.playerTeam[battleManager.currentPokemon].getASCIIPath(),true);
-        textManager.changeASCII(battleManager.pokemonList[battleManager.enemyPokemon].getASCIIPath(), false);
+        changeASCII(battleManager.playerTeam[battleManager.currentPokemon].getASCIIPath(),true);
+        changeASCII(battleManager.pokemonList[battleManager.enemyPokemon].getASCIIPath(), false);
+        changeASCIICondition(sASCIICondition, true); 
+        changeASCIICondition(eASCIICondition, false);
         double healthPercentS = battleManager.playerTeam[battleManager.currentPokemon].hp/
             battleManager.playerTeam[battleManager.currentPokemon].MAX_HP;
-        textManager.setHealth(((healthPercentS>=0.50)?"green":(healthPercentS>=0.25)?"yellow":"red")
+        setHealth(((healthPercentS>=0.50)?"green":(healthPercentS>=0.25)?"yellow":"red")
             ,(int) battleManager.playerTeam[battleManager.currentPokemon].hp, 
             battleManager.playerTeam[battleManager.currentPokemon].MAX_HP, true);
         double healthPercentE = battleManager.pokemonList[battleManager.enemyPokemon].hp/
             battleManager.pokemonList[battleManager.enemyPokemon].MAX_HP;
-        textManager.setHealth(((healthPercentE>=0.50)?"green":(healthPercentE>=0.25)?"yellow":"red")
+        setHealth(((healthPercentE>=0.50)?"green":(healthPercentE>=0.25)?"yellow":"red")
             ,(int) battleManager.pokemonList[battleManager.enemyPokemon].hp,
             battleManager.pokemonList[battleManager.enemyPokemon].MAX_HP, false);
     }

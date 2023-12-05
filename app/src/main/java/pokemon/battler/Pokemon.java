@@ -25,6 +25,8 @@ public class Pokemon {
         this.spd = stats[5];
         this.moves = moves;
         this.ASCII_FILEPATH = ASCII_FILEPATH;
+        //TODO this is debug, remove this
+        effect.add(Status.CONFUSED);
     }
     public Move getMove(int num) {return moves[num];}
     public String getASCIIPath() {return ASCII_FILEPATH;}
