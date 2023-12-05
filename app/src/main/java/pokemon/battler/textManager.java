@@ -269,7 +269,7 @@ public class textManager {
         for (int i = 0; i < terminal.length; i++) {terminal[i] = scanner.nextLine();}
         for (int i = 0; i < logs.size(); i++) {
             currentLine += 2;
-            if (currentLine == terminalLength) {
+            if (currentLine >= terminalLength) {
                 currentLine=terminal.length-1;
                 terminal[currentLine] = terminal[currentLine].substring(0,terminal[currentLine].length()-7) 
                      + ">>" + terminal[currentLine].substring(terminal[currentLine].length()-5);

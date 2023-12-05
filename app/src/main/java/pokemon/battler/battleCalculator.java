@@ -9,31 +9,56 @@ public class battleCalculator {
     public static Random random = new Random();
 
     public static void battleAndLogs(int pos) throws FileNotFoundException {
+        boolean sAttackItself = false;
+        boolean eAttackItself = false;
         Pokemon self = battleManager.playerTeam[battleManager.currentPokemon], 
             enemy = battleManager.pokemonList[battleManager.enemyPokemon];
         if (self.effect.contains(Status.NORMAL) && self.effect.size()==1) {self.skipTurn=false;}
         if (enemy.effect.contains(Status.NORMAL) && enemy.effect.size()==1) {enemy.skipTurn=false;}
-        Move selfMove = self.getMove(pos), enemyMove = enemy.getMove(random.nextInt(4));
-        boolean selfPriority = self.effect.contains(Status.PRIORITY);
-        boolean enemyPriority = enemy.effect.contains(Status.PRIORITY);
+        Move selfMove = self.getMove(0), enemyMove;
+        if (!self.effect.contains(Status.CONFUSED)) {selfMove = self.getMove(pos);}
+        else {
+            if (random.nextInt(2) == 0) {selfMove = self.getMove(random.nextInt(4));}
+            else {sAttackItself = true;}
+        }
+        enemyMove = enemy.getMove(random.nextInt(4));
+        if (enemy.effect.contains(Status.CONFUSED)&&random.nextInt(2) == 1) {eAttackItself = true;}
+        int selfPriority = (self.skipTurn == true)?-1:(self.effect.contains(Status.PRIORITY)?2:
+            (self.spd>enemy.spd)?1:0);
+        int enemyPriority = (enemy.skipTurn == true)?-1:(enemy.effect.contains(Status.PRIORITY)?2:
+            (enemy.spd>self.spd)?1:0);;
         ArrayList<String> arr = new ArrayList<String>();
         arr.add("Nothing happened...");
-        if (enemy.skipTurn && self.skipTurn) {textManager.printLogs(arr);}
-        else if (enemy.skipTurn) {textManager.printLogs(attack(self, enemy, selfMove));} 
-        else if (self.skipTurn) {textManager.printLogs(attack(enemy, self, enemyMove));} 
-        else if (enemyPriority) {
-            textManager.printLogs(attack(enemy, self, enemyMove));
-            if (!self.skipTurn) {textManager.printLogs(attack(self, enemy, selfMove));}
-        } else if (selfPriority) {
-            textManager.printLogs(attack(self, enemy, selfMove));
-            if (!enemy.skipTurn) {textManager.printLogs(attack(enemy, self, enemyMove));}
-        } else if (enemy.spd > self.spd) {
-            textManager.printLogs(attack(enemy, self, enemyMove));
-            if (!self.skipTurn) {textManager.printLogs(attack(self, enemy, selfMove));}
-        } else {
-            textManager.printLogs(attack(self, enemy, selfMove));
-            if (!enemy.skipTurn) {textManager.printLogs(attack(enemy, self, enemyMove));}
+        if (selfPriority == enemyPriority) {
+            if (selfPriority==-1) {textManager.printLogs(arr);}
+            else {
+                if (random.nextInt(2) == 0) {selfPriority++;} 
+                else {enemyPriority++;}
+            }
         }
+        if (selfPriority > enemyPriority) {
+            textManager.printLogs(attack(self, enemy, selfMove));
+            if (enemyPriority!=-1) {textManager.printLogs(attack(enemy, self, enemyMove));}
+        } else if (enemyPriority > selfPriority) {
+            textManager.printLogs(attack(enemy, self, enemyMove));
+            if (selfPriority!=-1) {textManager.printLogs(attack(self, enemy, selfMove));};
+        }
+        // if (enemy.skipTurn && self.skipTurn) {textManager.printLogs(arr);}
+        // else if (enemy.skipTurn) {textManager.printLogs(attack(self, enemy, selfMove));} 
+        // else if (self.skipTurn) {textManager.printLogs(attack(enemy, self, enemyMove));} 
+        // else if (enemyPriority) {
+        //     textManager.printLogs(attack(enemy, self, enemyMove));
+        //     if (!self.skipTurn) {textManager.printLogs(attack(self, enemy, selfMove));}
+        // } else if (selfPriority) {
+        //     textManager.printLogs(attack(self, enemy, selfMove));
+        //     if (!enemy.skipTurn) {textManager.printLogs(attack(enemy, self, enemyMove));}
+        // } else if (enemy.spd > self.spd) {
+        //     textManager.printLogs(attack(enemy, self, enemyMove));
+        //     if (!self.skipTurn) {textManager.printLogs(attack(self, enemy, selfMove));}
+        // } else {
+        //     textManager.printLogs(attack(self, enemy, selfMove));
+        //     if (!enemy.skipTurn) {textManager.printLogs(attack(enemy, self, enemyMove));}
+        // }
     }
 
     public static ArrayList<String> attack(Pokemon attacker, Pokemon attacked, Move move) {
