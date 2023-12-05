@@ -2,10 +2,8 @@ package pokemon.battler;
 import java.util.Scanner;
 import java.io.FileNotFoundException;
 import java.util.Random;
-/*TODO Figure out the Health glitch
-Add Items and Selection Screen
+/*TODO Add Items and Selection Screen
 Add Pokemon Selection screen
-Add resize window screen + terminal instructions
 Add run away dialogue
 Add post and pre battle dialouge
 Add new pokemon

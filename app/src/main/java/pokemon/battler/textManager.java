@@ -30,6 +30,10 @@ public class textManager {
     private static final int[] moveLines = {3,7};
     private static final int[] moveCol = {31,64};
 
+    private static final int[] pokemonLines = {5,12,19,26};
+    private static final int switchMiddleColumn = 60;
+    private static final int pokemonListColumn = 3;
+
     public static final String ANSI_BLACK = "\u001B[90m";
     public static final String ANSI_RED = "\u001B[31m";
     public static final String ANSI_GREEN = "\u001B[32m";
@@ -66,7 +70,7 @@ public class textManager {
             e.printStackTrace();
         }
     }
-    public static void setHealth(String color, int hp, int maxHP, boolean isSelf) {
+    public static String setHealth(String color, int hp, int maxHP, boolean isSelf) {
         String healthBar = ANSI_BLACK;
         int healthTicksOff = (int) (HEALTH_TICKS*(maxHP-(double)hp)/maxHP);
         if (healthTicksOff>HEALTH_TICKS) {healthTicksOff = HEALTH_TICKS;}
@@ -90,17 +94,48 @@ public class textManager {
                 + file[i].substring(num+ANSI_BLACK.length()+healthTicksOff,file[i].lastIndexOf("█")) 
                 + ANSI_WHITE + file[i].substring(file[i].lastIndexOf("█")+1);
         }
+        return file[targetLines[1]].substring(num,file[targetLines[1]].lastIndexOf("█")+ANSI_WHITE.length()+1);
     }
     public static void cursorPos(int pos) {
         int[][] positions = new int[4][2];
-        if (screen == CurrentScreen.MAIN_BATTLE) {positions = new int[][] {{31,36},{31,65},{35,36},{35,65}};}
-        if (screen == CurrentScreen.MOVES) {positions = new int[][] {{31,27},{31,61},{35,27},{35,61}};}
+        if (screen == CurrentScreen.MAIN_BATTLE) {positions = new int[][] {{31,36},{31,65},{36,36},{36,65}};}
+        if (screen == CurrentScreen.MOVES) {positions = new int[][] {{31,27},{31,61},{35,27},{35,61},{28,27}};}
         for (int[] i : positions) {
             file[i[0]] = file[i[0]].substring(0,i[1]) + "  " + file[i[0]].substring(i[1]+2);
         }
-        if (screen == CurrentScreen.MOVES) {try {getTerminal(battleManager.pokemonList[battleManager.currentPokemon],pos);
-        } catch (FileNotFoundException e) {e.printStackTrace();}}
-        file[positions[pos][0]] = file[positions[pos][0]].substring(0,positions[pos][1]) + ">>" + file[positions[pos][0]].substring(positions[pos][1]+2);
+        if (pos!=-1) {
+            if (screen == CurrentScreen.MOVES) {try {
+                getTerminal(battleManager.playerTeam[battleManager.currentPokemon],pos);
+            } catch (FileNotFoundException e) {e.printStackTrace();}}
+            file[positions[pos][0]] = file[positions[pos][0]].substring(0,positions[pos][1]) 
+                + ">>" + file[positions[pos][0]].substring(positions[pos][1]+2);
+        } else {
+            pos = 4;
+            file[positions[pos][0]] = file[positions[pos][0]].substring(0,positions[pos][1]) 
+                + "<<" + file[positions[pos][0]].substring(positions[pos][1]+2);
+        }
+    }
+
+    public static int cursorPosList() {
+        int[] positions = new int[0];
+        if (screen==CurrentScreen.POKEMON_SWITCH) {positions = new int[] {1,5,12,19,26};}
+        int pos = 1;
+        while (true) {
+            for (int i : positions) {
+                file[i] = file[i].substring(0,pokemonListColumn) + "  " + 
+                    file[i].substring(pokemonListColumn+2);
+            }
+            String input = wait.next();
+            if (input.equals("^")) {pos--;} else if (input.equals("v")) {pos++;}
+            else {break;}
+            if (pos==5) {pos=0;} else if (pos==-1) {pos=4;}
+            String arrow = ">>";
+            if (pos==0) {arrow = "<<";}
+                file[positions[pos]] = file[positions[pos]].substring(0,pokemonListColumn) 
+                    + arrow + file[positions[pos]].substring(pokemonListColumn+2);
+            print();
+        }
+        return pos-1;
     }
 
     public static void changeASCII(String ASCII_FILEPATH, boolean isSelf) throws FileNotFoundException {
@@ -162,9 +197,70 @@ public class textManager {
                 terminal[moveLines[1]].substring(moveCol[1],moveCol[1]+12).replaceFirst("TYP", move3.moveType)
                 .replaceFirst("ELE", move3.moveElement) + " " + move3.moveName +
                 terminal[moveLines[1]].substring(moveCol[1]+13+move3.moveName.length());
-        for (int i = 0; i < terminalLength; i++) {file[terminalStart+i] = terminal[i];}
+        for (int i = 0; i < terminalLength; i++) {
+            file[terminalStart+i] = terminal[i];
+        }
     }
-    public static void getTerminal(Pokemon[] pokemon) {}
+    public static void getTerminal(Pokemon[] pokemons) throws FileNotFoundException {
+        String[] terminal = new String[file.length-1];
+        Scanner scanner = new Scanner(new File("app/src/main/resources/pokemonSwitchScreen.txt"));
+        for (int i = 0; i < terminal.length; i++) {
+            terminal[i] = scanner.nextLine();
+        }
+        for (int i = 0; i < pokemons.length; i++) {
+            terminal[pokemonLines[i]-2] = terminal[pokemonLines[i]-2]
+                .replace("NAME", pokemons[i].name);
+            terminal[pokemonLines[i]] = terminal[pokemonLines[i]]
+                .replace("EA", fullType(pokemons[i].typeA));
+            if (pokemons[i].typeB!=null) {
+                terminal[pokemonLines[i]] = terminal[pokemonLines[i]]
+                    .replace("TB", fullType(pokemons[i].typeB));}
+            else {
+                terminal[pokemonLines[i]] = terminal[pokemonLines[i]]
+                    .replace("|TB|", "");}
+            if (pokemons[i].effect.contains(Status.FAINTED)) {
+                terminal[pokemonLines[i]] = terminal[pokemonLines[i]]
+                    .replace("STS", "FAINTED");}
+            else if (!pokemons[i].effect.isEmpty()) {
+                terminal[pokemonLines[i]] = terminal[pokemonLines[i]]
+                    .replace("STS", pokemons[i].effect.get(0).name());}
+            else {
+                terminal[pokemonLines[i]] = terminal[pokemonLines[i]]
+                    .replace("STS", "NORMAL");
+            }
+            boolean fillBox = false;
+            String topBox = "", bottomBox = "";
+            for (char c : terminal[pokemonLines[i]].substring(terminal[pokemonLines[i]+2].indexOf("H"),switchMiddleColumn-1).toCharArray()) {
+                if (c == '|') {fillBox = !fillBox;}
+                if (fillBox) {topBox += "_"; bottomBox += "‾";} 
+                else {topBox += " "; bottomBox += " ";}
+                if (c == '|' && !fillBox) {topBox = topBox.substring(0,topBox.length()-1)+"_"; 
+                bottomBox = bottomBox.substring(0,bottomBox.length()-1)+"‾";}
+            }
+            terminal[pokemonLines[i]-1] = terminal[pokemonLines[i]-1].substring(0,terminal[pokemonLines[i]+2].indexOf("H"))
+                + topBox + "                     ";
+            terminal[pokemonLines[i]+1] = terminal[pokemonLines[i]+1].substring(0,terminal[pokemonLines[i]+2].indexOf("H"))
+                + bottomBox + "                     ";
+            String healthBar = setHealth(((pokemons[i].hp/pokemons[i].hp>=0.50)?"green":(pokemons[i].hp/pokemons[i].hp>=0.25)
+                ?"yellow":"red"),(int)pokemons[i].hp, pokemons[i].MAX_HP,true);
+            terminal[pokemonLines[i]+2] = terminal[pokemonLines[i]+2]
+                .replace("██████████**/**██████████", healthBar);
+            for (int j = -2; j < 2; j++) {
+                terminal[pokemonLines[i]+j] = terminal[pokemonLines[i]+j].substring(0,switchMiddleColumn)+
+                    "|                                |";
+            }
+        }
+        for (int i = 0; i < terminal.length;i++) {file[i] = terminal[i];} file[file.length-1] = "";
+    }
+    private static String fullType(String type) {
+        if (type == "NOR") {return "NORMAL";} else if (type == "FIR") {return "FIRE";} else if (type == "WAT") {return "WATER";}
+        else if (type == "ELE") {return "ELECTRIC";} else if (type == "GRA") {return "GRASS";} else if (type == "ICE") {return "ICE";}
+        else if (type == "FIG") {return "FIGHTING";} else if (type == "POI") {return "POISON";} else if (type == "GRO") {return "GROUND";}
+        else if (type == "FLY") {return "FLYING";} else if (type == "PSY") {return "PSYCHIC";} else if (type == "BUG") {return "BUG";}
+        else if (type == "ROC") {return "ROCK";} else if (type == "GHO") {return "GHOST";} else if (type == "DRA") {return "DRAGON";}
+        else if (type == "DAR") {return "DARK";} else if (type == "STE") {return "STEEL";} else if (type == "FAI") {return "FAIRY";}
+        else {return "ERROR";}
+    }
     public static void getTerminal(Item[] items) {}
     public static void printLogs(ArrayList<String> logs) throws FileNotFoundException {
         int currentLine = 0;
@@ -197,18 +293,33 @@ public class textManager {
     }
     public static void getTerminal() throws FileNotFoundException {
         Scanner scanner = new Scanner(new File("app/src/main/resources/Battle_Screen.txt"));
-        for (int i = 0; i < terminalStart; i++) {scanner.nextLine();}
-        for (int i = terminalStart; i < terminalStart+terminalLength; i++) {file[i] = scanner.nextLine();}
+        for (int i = 0; i < 0; i++) {scanner.nextLine();}
+        for (int i = 0; i < terminalStart+terminalLength; i++) {file[i] = scanner.nextLine();}
+        textManager.changeASCII(battleManager.playerTeam[battleManager.currentPokemon].getASCIIPath(),true);
+        textManager.changeASCII(battleManager.pokemonList[battleManager.enemyPokemon].getASCIIPath(), false);
+        textManager.setHealth(((battleManager.playerTeam[battleManager.currentPokemon].hp/
+            battleManager.playerTeam[battleManager.currentPokemon].hp>=0.50)?"green":
+            (battleManager.playerTeam[battleManager.currentPokemon].hp/
+            battleManager.playerTeam[battleManager.currentPokemon].hp>=0.25)?"yellow":"red")
+            ,(int) battleManager.playerTeam[battleManager.currentPokemon].hp, 
+            battleManager.playerTeam[battleManager.currentPokemon].MAX_HP, true);
+        textManager.setHealth(((battleManager.pokemonList[battleManager.enemyPokemon].hp/
+            battleManager.pokemonList[battleManager.enemyPokemon].hp>=0.50)?"green":
+            (battleManager.pokemonList[battleManager.enemyPokemon].hp/
+            battleManager.pokemonList[battleManager.enemyPokemon].hp>=0.25)?"yellow":"red")
+            ,(int) battleManager.pokemonList[battleManager.enemyPokemon].hp,
+            battleManager.pokemonList[battleManager.enemyPokemon].MAX_HP, false);
     }
+    public static void prefightScreen() throws FileNotFoundException {
+        Scanner scanner = new Scanner(new File("app/src/main/resources/prefightScreen.txt"));
+        while(scanner.hasNextLine()) {System.out.println(scanner.nextLine());}
+    }
+
     public static void print() {
         for (int i = 0; i < TEXT_LENGTH; i++) {
             System.out.println(file[i]);
         }
         System.out.println("");
-    }
-    public static void prefightScreen() throws FileNotFoundException {
-        Scanner scanner = new Scanner(new File("app/src/main/resources/prefightScreen.txt"));
-        while(scanner.hasNextLine()) {System.out.println(scanner.nextLine());}
     }
 }
 

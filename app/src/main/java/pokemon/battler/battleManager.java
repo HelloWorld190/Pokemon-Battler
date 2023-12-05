@@ -12,8 +12,11 @@ public class battleManager {
     public static Pokemon Blastoise;
     public static Pokemon Pidgey;
     public static Pokemon[] pokemonList = new Pokemon[2];
+    public static Pokemon[] playerTeam;
     public static int currentPokemon = 0;
     public static int enemyPokemon = 1;
+    public static boolean returnToMain = false;
+    public static boolean setUpVatk = false;
     public static void setUp() {
         //TODO add pokemon randomizer + better set up;
         Move ShellSmash = new Move("Shell Smash", "NOR", 00, 00, moveTarget.EFFonSELF,
@@ -65,7 +68,7 @@ public class battleManager {
             "effects"
         });
         Move AerialAce = new Move("Aerial Ace", "FLY", 60, 100,moveTarget.ATK);
-        Tackle.setDescrpt(new String[] {
+        AerialAce.setDescrpt(new String[] {
             "FLYING Dmg,",
             "No other",
             "effects"
@@ -82,11 +85,25 @@ public class battleManager {
             new int[] {40,45,40,35,35,56},"NOR","FLY",
             new Move[] {QuickAttack,Tackle,AerialAce,Twister}
         );
+
+        Move HydroGun = new Move("Hydro Gun","WAT",40,100,moveTarget.ATK,true);
+        HydroGun.setDescrpt(new String[] {
+            "WATER Dmg.",
+            "No other", 
+            "effects"
+        });
+
+        Pokemon pidgey2 = new Pokemon(
+            "Pidgey2", "app/src/main/resources/pidgeyASCII.txt",
+            new int[] {40,45,40,35,35,56},"NOR","FLY",
+            new Move[] {QuickAttack,Tackle,AerialAce,Twister}
+        );
         pokemonList = new Pokemon[] {Blastoise,Pidgey};
-        textManager.setHealth("green", Pidgey.MAX_HP, Pidgey.MAX_HP,false);
-        textManager.setHealth("green", Blastoise.MAX_HP, Blastoise.MAX_HP,true);
+        playerTeam = new Pokemon[] {Blastoise,Blastoise,pidgey2};
+        textManager.setHealth("green",Pidgey.MAX_HP, Pidgey.MAX_HP,false);
+        textManager.setHealth("green",Blastoise.MAX_HP, Blastoise.MAX_HP,true);
         try {
-            textManager.changeASCII(pokemonList[currentPokemon].getASCIIPath(),true);
+            textManager.changeASCII(playerTeam[currentPokemon].getASCIIPath(),true);
             textManager.changeASCII(pokemonList[enemyPokemon].getASCIIPath(), false);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -97,35 +114,57 @@ public class battleManager {
     public static void startInput() {
         scanner = new Scanner(System.in);
             int[][] positions = {
+                {-1,-1},
                 {0,1},
                 {2,3}
             };
-            int posX = 0,posY = 0;
+            int posX = 0,posY = 1;
         while (!finish) {
             while (true) {
                 String input = scanner.next();
-                if (input.equals(">")||input.equals("<")) {posX++;}
-                else if (input.equals("v")||input.equals("^")) {posY++;}
+                if (input.equals(">")) {posX++;}
+                else if (input.equals("<")) {posX--;}
+                else if (input.equals("v")) {posY++;}
+                else if (input.equals("^")) {posY--;}
                 else {break;}
-                if (posX >= 2) {posX -= 2;}
-                if (posY >= 2) {posY -= 2;}
+                if (posX >= 2) {posX -= 2;} if (posX<0) {posX+=2;}
+                if (posY >= 3) {posY -= 3;} if (posY<0) {posY+=3;}
+                if (textManager.screen == CurrentScreen.MAIN_BATTLE && posY==0) {
+                    if (input.equals("^")) {posY=2;} else {posY=1;}
+                }
                 if (textManager.screen == CurrentScreen.MOVES) {
-                    try {textManager.getTerminal(pokemonList[currentPokemon],positions[posY][posX]);
+                    try {textManager.getTerminal(playerTeam[currentPokemon],positions[posY][posX]);
                     } catch (FileNotFoundException e) {e.printStackTrace();}}
                 textManager.cursorPos(positions[posY][posX]);
                 textManager.print();
             }
+            if (setUpVatk) {setUpVatk = false; playerTeam[currentPokemon].skipTurn=false;}
             if (textManager.screen == CurrentScreen.MAIN_BATTLE && positions[posY][posX] == 0) {
-                try {textManager.getTerminal(pokemonList[currentPokemon], positions[posY][posX]);
+                try {textManager.getTerminal(playerTeam[currentPokemon], positions[posY][posX]);
                 } catch (FileNotFoundException e) { e.printStackTrace();}
                 textManager.screen = CurrentScreen.MOVES;
                 textManager.cursorPos(positions[posY][posX]);
+            } else if (textManager.screen == CurrentScreen.MAIN_BATTLE && positions[posY][posX] == 1) {
+                try {textManager.getTerminal(playerTeam);
+                } catch (FileNotFoundException e) { e.printStackTrace();}
+                textManager.print();
+                textManager.screen = CurrentScreen.POKEMON_SWITCH;
+                int selection = textManager.cursorPosList();
+                if (selection == -1 || selection == currentPokemon) {returnToMain = true;}
+                else {
+                    currentPokemon = selection;
+                    playerTeam[currentPokemon].skipTurn=true;
+                    setUpVatk = true;
+                    try {textManager.changeASCII(playerTeam[currentPokemon].getASCIIPath(),true);
+                    } catch (FileNotFoundException e) {e.printStackTrace();}
+                }
             } else if (textManager.screen == CurrentScreen.MOVES) {
-                if (pokemonList[currentPokemon].getMove(positions[posY][posX]).disabled) {
+                if (positions[posY][posX] == -1) {returnToMain=true;}
+                else if (playerTeam[currentPokemon].getMove(positions[posY][posX]).disabled) {
                     ArrayList<String> notification = new ArrayList<String>();
                     notification.add("This move is on cooldown!");
                     try {textManager.printLogs(notification);
-                    textManager.getTerminal(pokemonList[currentPokemon], positions[posY][posX]);}
+                    textManager.getTerminal(playerTeam[currentPokemon], positions[posY][posX]);}
                     catch (FileNotFoundException e) {e.printStackTrace();}
                     textManager.cursorPos(positions[posY][posX]);
                 } else {
@@ -134,11 +173,19 @@ public class battleManager {
                     catch (FileNotFoundException e) {e.printStackTrace();}
                 }
             }
-            if (textManager.screen == CurrentScreen.POST_MOVE) {
+            if (setUpVatk) {
+                try {textManager.getTerminal();}
+                catch (FileNotFoundException e) {e.printStackTrace();}
+                textManager.screen = CurrentScreen.POST_MOVE;
+                try{battleCalculator.battleAndLogs(positions[posY][posX]);}
+                catch (FileNotFoundException e) {e.printStackTrace();}
+            }
+            if (textManager.screen == CurrentScreen.POST_MOVE || returnToMain) {
+                returnToMain = false;
                 textManager.screen = CurrentScreen.MAIN_BATTLE;
                 try {textManager.getTerminal();} 
                 catch (FileNotFoundException e) {e.printStackTrace();}
-                posX = 0; posY = 0;
+                posX = 0; posY = 1;
             }
             textManager.print();
         }

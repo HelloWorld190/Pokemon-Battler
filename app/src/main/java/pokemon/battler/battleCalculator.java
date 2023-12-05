@@ -10,25 +10,30 @@ public class battleCalculator {
     public static Random random = new Random();
 
     public static void battleAndLogs(int pos) throws FileNotFoundException {
-        Pokemon self = battleManager.pokemonList[battleManager.currentPokemon], 
+        Pokemon self = battleManager.playerTeam[battleManager.currentPokemon], 
             enemy = battleManager.pokemonList[battleManager.enemyPokemon];
+        if (self.effect.contains(Status.NORMAL) && self.effect.size()==1) {self.skipTurn=false;}
+        if (enemy.effect.contains(Status.NORMAL) && enemy.effect.size()==1) {enemy.skipTurn=false;}
         Move selfMove = self.getMove(pos), enemyMove = enemy.getMove(random.nextInt(4));
-        boolean selfPriority = Arrays.stream(selfMove.effects).anyMatch(effect -> effect == Status.PRIORITY);
-        boolean enemyPriority = Arrays.stream(enemyMove.effects).anyMatch(effect -> effect == Status.PRIORITY);
-        if (enemy.skipTurn) {textManager.printLogs(attack(self, enemy, selfMove));} 
+        boolean selfPriority = self.effect.contains(Status.PRIORITY);
+        boolean enemyPriority = enemy.effect.contains(Status.PRIORITY);
+        ArrayList<String> arr = new ArrayList<String>();
+        arr.add("Nothing happened...");
+        if (enemy.skipTurn && self.skipTurn) {textManager.printLogs(arr);}
+        else if (enemy.skipTurn) {textManager.printLogs(attack(self, enemy, selfMove));} 
         else if (self.skipTurn) {textManager.printLogs(attack(enemy, self, enemyMove));} 
         else if (enemyPriority) {
             textManager.printLogs(attack(enemy, self, enemyMove));
-            textManager.printLogs(attack(self, enemy, selfMove));
+            if (!self.skipTurn) {textManager.printLogs(attack(self, enemy, selfMove));}
         } else if (selfPriority) {
             textManager.printLogs(attack(self, enemy, selfMove));
-            textManager.printLogs(attack(enemy, self, enemyMove));
+            if (!enemy.skipTurn) {textManager.printLogs(attack(enemy, self, enemyMove));}
         } else if (enemy.spd > self.spd) {
             textManager.printLogs(attack(enemy, self, enemyMove));
-            textManager.printLogs(attack(self, enemy, selfMove));
+            if (!self.skipTurn) {textManager.printLogs(attack(self, enemy, selfMove));}
         } else {
             textManager.printLogs(attack(self, enemy, selfMove));
-            textManager.printLogs(attack(enemy, self, enemyMove));
+            if (!enemy.skipTurn) {textManager.printLogs(attack(enemy, self, enemyMove));}
         }
     }
 
@@ -64,19 +69,17 @@ public class battleCalculator {
                 }
             }
             attacked.hp -= damage;
-            String color;
-            if (attacked.hp/attacked.MAX_HP >= 0.50) {
-                color = "green";
-            } else if (attacked.hp/attacked.MAX_HP >= 0.25) {
-                color = "yellow";
-            } else {color = "red";}
-            if (attacked.hp <= 0) {attacked.effect.add(Status.FAINTED);}
-            textManager.setHealth(color, (int) attacked.hp, attacked.MAX_HP, 
-                battleManager.pokemonList[battleManager.currentPokemon] == attacked);
+            if (attacked.hp <= 0) {battleLog.add(fainted(attacked));}
+            String color = "";
+            if (attacked.hp/attacked.MAX_HP >= 0.50) {color = "green";} 
+            else if (attacked.hp/attacked.MAX_HP >= 0.25) {color = "yellow";} 
+            else {color = "red";}
+            textManager.setHealth(color,(int) attacked.hp, attacked.MAX_HP, 
+                battleManager.playerTeam[battleManager.currentPokemon] == attacked);
             if (multi == 0) {battleLog.set(0,battleLog.get(0) + " It wasn't effective...");}
             if (multi == 0.5 || multi == 0.25) {battleLog.set(0,battleLog.get(0) + " It wasn't very effective...");}
             if (multi == 2) {battleLog.set(0,battleLog.get(0) + " It was very effective!");}
-            if (multi == 4) {battleLog.set(0,battleLog.get(0) + " It was super very effective!");}
+            if (multi == 4) {battleLog.set(0,battleLog.get(0) + " It was super effective!");}
         } else {
             if (move.target == moveTarget.EFFonENEMY) {
                 inflictStatus(attacker, attacked, move);
@@ -105,11 +108,12 @@ public class battleCalculator {
         }
     }
 
-    private static ArrayList<String> applyStatus(Pokemon pokemon, Pokemon caster, Move move) {
+    public static ArrayList<String> applyStatus(Pokemon pokemon, Pokemon caster, Move move) {
         ArrayList<String> effectLogs = new ArrayList<String>();
         int[] statsMod = new int[5];
         ArrayList<Status> persistantEffects = new ArrayList<Status>();
         for (Status i : pokemon.effect) {
+            if (i==Status.FAINTED) {persistantEffects.add(Status.FAINTED);}
             if (i == Status.MINUS_ATK) {statsMod[0]--;}
             if (i == Status.PLUS_ATK) {statsMod[0]++;}
             if (i == Status.MINUS_DEF) {statsMod[1]--;}
@@ -125,14 +129,6 @@ public class battleCalculator {
                 persistantEffects.add(Status.NORMAL);
                 effectLogs.add(pokemon.name + " flinched and missed its turn!");
             }}
-            if (i == Status.FAINTED) {
-                pokemon.skipTurn = true;
-                persistantEffects.add(Status.FAINTED);
-                effectLogs.add(pokemon.name + " has fainted. ");
-                textManager.changeASCIICondition("FAI", 
-                    pokemon == battleManager.pokemonList[battleManager.currentPokemon]);
-                //TODO implement pokemon switch
-            }
             if (i == Status.FROZEN) {if (!(pokemon.typeA == "ICE"||pokemon.typeB=="ICE")) {
                 pokemon.skipTurn = true;
                 textManager.changeASCIICondition("FRO", 
@@ -162,6 +158,14 @@ public class battleCalculator {
         return effectLogs;
     }
 
+    private static String fainted(Pokemon pokemon) {
+        pokemon.skipTurn = true;
+        pokemon.effect.add(Status.FAINTED);
+        textManager.changeASCIICondition("FAI", 
+            pokemon == battleManager.pokemonList[battleManager.currentPokemon]);
+        return pokemon.name + " has fainted. ";
+        //TODO implement pokemon switch
+    }
     private static double getAtkMulti(String[] types, String moveElement) {
         double multi = 1.0;
         if (moveElement == "NOR") {
