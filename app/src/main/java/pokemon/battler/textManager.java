@@ -22,7 +22,7 @@ public class textManager {
     private static final int ASCII_START_COLUMN = 37;
 
     private static final int terminalStart = 28;
-    private static final int terminalLength = 10;
+    private static final int terminalLength = 11;
     private static final int statLine = 2;
     private static final int[] effectLines = {6,7,8};
     private static final int effectLineLength = 16;
@@ -297,16 +297,14 @@ public class textManager {
         for (int i = 0; i < terminalStart+terminalLength; i++) {file[i] = scanner.nextLine();}
         textManager.changeASCII(battleManager.playerTeam[battleManager.currentPokemon].getASCIIPath(),true);
         textManager.changeASCII(battleManager.pokemonList[battleManager.enemyPokemon].getASCIIPath(), false);
-        textManager.setHealth(((battleManager.playerTeam[battleManager.currentPokemon].hp/
-            battleManager.playerTeam[battleManager.currentPokemon].hp>=0.50)?"green":
-            (battleManager.playerTeam[battleManager.currentPokemon].hp/
-            battleManager.playerTeam[battleManager.currentPokemon].hp>=0.25)?"yellow":"red")
+        double healthPercentS = battleManager.playerTeam[battleManager.currentPokemon].hp/
+            battleManager.playerTeam[battleManager.currentPokemon].MAX_HP;
+        textManager.setHealth(((healthPercentS>=0.50)?"green":(healthPercentS>=0.25)?"yellow":"red")
             ,(int) battleManager.playerTeam[battleManager.currentPokemon].hp, 
             battleManager.playerTeam[battleManager.currentPokemon].MAX_HP, true);
-        textManager.setHealth(((battleManager.pokemonList[battleManager.enemyPokemon].hp/
-            battleManager.pokemonList[battleManager.enemyPokemon].hp>=0.50)?"green":
-            (battleManager.pokemonList[battleManager.enemyPokemon].hp/
-            battleManager.pokemonList[battleManager.enemyPokemon].hp>=0.25)?"yellow":"red")
+        double healthPercentE = battleManager.pokemonList[battleManager.enemyPokemon].hp/
+            battleManager.pokemonList[battleManager.enemyPokemon].MAX_HP;
+        textManager.setHealth(((healthPercentE>=0.50)?"green":(healthPercentE>=0.25)?"yellow":"red")
             ,(int) battleManager.pokemonList[battleManager.enemyPokemon].hp,
             battleManager.pokemonList[battleManager.enemyPokemon].MAX_HP, false);
     }

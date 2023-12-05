@@ -2,7 +2,6 @@ package pokemon.battler;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.InputMismatchException;
 import java.util.Random;
 
@@ -52,7 +51,7 @@ public class battleCalculator {
                 atk = attacker.atk;
                 def = attacked.def;
             }
-            int damage = (int) (((((2.0 /** Level*/ / 5 + 2) * atk * move.dmg / def) / 50) + 2) * STAB * multi * random.nextDouble(0.85, 1.0));
+            int damage = (int) (((((2.0 /** Level*/ / 5 + 2) * atk * move.dmg / def) / 50) + 2) * STAB * multi * (0.85 + (1.0 - 0.85) * random.nextDouble()));
             if (random.nextDouble()*100-move.acc > 0) {
                 damage = 0;
                 battleLog.add("It missed!");
