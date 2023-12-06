@@ -47,7 +47,7 @@ public class battleCalculator {
         } else if (enemyPriority > selfPriority) {
             if (eAttackItself){textManager.printLogs(attack(enemy, enemy, enemyMove));}
             else {textManager.printLogs(attack(enemy, self, enemyMove));};
-            if (enemyPriority!=-1) {
+            if (selfPriority!=-1) {
                 if (sAttackItself){textManager.printLogs(attack(self, self, selfMove));}
                 else {textManager.printLogs(attack(self, enemy, selfMove));}
             }
@@ -168,20 +168,31 @@ public class battleCalculator {
                     pokemon == battleManager.pokemonList[battleManager.currentPokemon]);
                 effectLogs.add(pokemon.name + " was frozen!");
                 persistantEffects.add(Status.FROZEN);
-            }}
+            }
             if (i==Status.CONFUSED) {
-                int times=0;
+                int times=0,activeTimers=0;
                 for (Status j : pokemon.effect) {if (j==Status.CONFUSED) {times++;}}
-                if (times>timerList.size()) {
+                for (effectTimer j : timerList) {if (j.effect==Status.CONFUSED) {activeTimers++;}}
+                if (times>activeTimers) {
                     timerList.add(new effectTimer(Status.CONFUSED,
                         random.nextInt(4)+1+effectTimer.turnNum));}
                 textManager.changeASCIICondition("CON", 
                     pokemon == battleManager.pokemonList[battleManager.currentPokemon]);
                 effectLogs.add(pokemon.name + " is confused!");
+                persistantEffects.add(i);
             }
-            if (i == Status.DISABLED) {move.disabled = true; persistantEffects.add(Status.REENABLE);}
-            if (i == Status.REENABLE) {move.disabled = false;}
+            if (i == Status.DISABLED) {
+                int times=0,activeTimers=0;
+                for (Status j : pokemon.effect) {if (j==Status.DISABLED) {times++;}}
+                for (effectTimer j : timerList) {if (j.effect==Status.DISABLED) {activeTimers++;}}
+                if (times>activeTimers) {
+                    timerList.add(new effectTimer(Status.DISABLED,
+                        effectTimer.turnNum+((move.moveName == "Hyper Beam")?2:1),move));}
+                persistantEffects.add(Status.DISABLED);
+            }
+            //TODO add Burn support
             if (i == Status.NORMAL) {pokemon.skipTurn=false;}
+            }
         }
         pokemon.effect = persistantEffects;
         for (int i=0; i < statsMod.length;i++) {
@@ -199,7 +210,8 @@ public class battleCalculator {
         pokemon.sp_def += statsMod[3];
         pokemon.spd += statsMod[4];
         for (effectTimer i : timerList) {
-            if(i.endEffect()) {pokemon.effect.remove(i.effect);}}
+            if(i.endEffect()) {pokemon.effect.remove(i.effect);
+                if (i.effect==Status.DISABLED) {move.disabled=false;}}}
         return effectLogs;
     }
 
@@ -207,7 +219,7 @@ public class battleCalculator {
         pokemon.skipTurn = true;
         pokemon.effect.add(Status.FAINTED);
         textManager.changeASCIICondition("FAI", 
-            pokemon == battleManager.pokemonList[battleManager.currentPokemon]);
+            pokemon == battleManager.playerTeam[battleManager.currentPokemon]);
         return pokemon.name + " has fainted. ";
         //TODO implement pokemon switch
     }

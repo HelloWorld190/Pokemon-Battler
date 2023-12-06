@@ -86,20 +86,44 @@ public class battleManager {
             new Move[] {QuickAttack,Tackle,AerialAce,Twister}
         );
 
-        Move HydroGun = new Move("Hydro Gun","WAT",40,100,moveTarget.ATK,true);
+        Move HydroGun = new Move("Hydro Gun","WAT",40,100,moveTarget.EFFonSELFnATK
+            ,new Status[] {Status.PRIORITY
+        },true);
         HydroGun.setDescrpt(new String[] {
             "WATER Dmg.",
-            "No other", 
+            "Self: Move", 
+            "priority."
+        });
+        Move HydroPump = new Move("Hydro Pump","WAT",110,80,moveTarget.ATK,
+            true);
+        HydroPump.setDescrpt(new String[] {
+            "WATER Dmg.",
+            "No other",
             "effects"
         });
-
-        Pokemon pidgey2 = new Pokemon(
-            "Pidgey2", "app/src/main/resources/pidgeyASCII.txt",
-            new int[] {40,45,40,35,35,56},"NOR","FLY",
-            new Move[] {QuickAttack,Tackle,AerialAce,Twister}
+        
+        Move HyperBeam = new Move("Hyper Beam","NOR",145,90,
+            moveTarget.EFFonSELFnATK,new Status[] {Status.DISABLED},true);
+        HyperBeam.setDescrpt(new String[] {
+           "NORMAL Dmg.",
+           "2 turns",
+           "cooldown" 
+        });
+        
+        Move Scald = new Move("Scald","WAT",100,80,moveTarget.EFFonENEMYnATK
+            ,new Status[] {Status.BURN},new double[] {0.3},true);
+        Scald.setDescrpt(new String[] {
+            "WAT Dmg.",
+            "Enemy: 30%",
+            "Burn"
+        });
+        Pokemon Vaporeon = new Pokemon(
+            "Vaporeon", "app/src/main/resources/vaporeonASCII.txt",
+            new int[] {130,65,60,110,95,65},"WAT", null,
+            new Move[] {HydroPump,HydroGun,HyperBeam,Scald}
         );
         pokemonList = new Pokemon[] {Blastoise,Pidgey};
-        playerTeam = new Pokemon[] {Blastoise,Blastoise,pidgey2};
+        playerTeam = new Pokemon[] {Blastoise,Vaporeon};
         textManager.setHealth("green",Pidgey.MAX_HP, Pidgey.MAX_HP,false);
         textManager.setHealth("green",Blastoise.MAX_HP, Blastoise.MAX_HP,true);
         try {

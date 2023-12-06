@@ -8,6 +8,7 @@ Add run away dialogue
 Add post and pre battle dialouge
 Add new pokemon
 Changable ASCII Art
+Add pokeball counter under HP 
 */
 public class App {
     public static Scanner scanner = new Scanner(System.in);

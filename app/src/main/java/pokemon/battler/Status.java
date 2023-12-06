@@ -18,5 +18,6 @@ public enum Status {
     FROZEN,
     FLINCH,
     NORMAL,
-    CONFUSED
+    CONFUSED,
+    BURN
 }

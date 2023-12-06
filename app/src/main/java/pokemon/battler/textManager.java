@@ -78,9 +78,10 @@ public class textManager {
         int healthTicksOff = (int) (HEALTH_TICKS*(maxHP-(double)hp)/maxHP);
         if (healthTicksOff>HEALTH_TICKS) {healthTicksOff = HEALTH_TICKS;}
         for (int i = 0; i < HEALTH_TICKS; i++) {healthBar += "█";}
-        String middleHealthBar = healthBar.substring(0,ANSI_BLACK.length()+(HEALTH_TICKS/2)-2) 
+        String middleHealthBar = healthBar.substring(0,ANSI_BLACK.length()+
+        (HEALTH_TICKS/2)-2+((hp<-10)?-1:0)+((hp>100)?-1:0)) 
             + (((hp>0&&hp<10)) ? "0" : "") + hp + "/" + maxHP + 
-            healthBar.substring(ANSI_BLACK.length()+(HEALTH_TICKS/2)+3);
+            healthBar.substring(ANSI_BLACK.length()+(HEALTH_TICKS/2)+3+((maxHP>100)?+1:0));
         int num = 0;
         int[] targetLines = new int[] {};
         if (isSelf) {num = selfHealthStart; targetLines = selfHealthLines;}
@@ -302,8 +303,12 @@ public class textManager {
         for (int i = 0; i < terminalStart+terminalLength; i++) {file[i] = scanner.nextLine();}
         changeASCII(battleManager.playerTeam[battleManager.currentPokemon].getASCIIPath(),true);
         changeASCII(battleManager.pokemonList[battleManager.enemyPokemon].getASCIIPath(), false);
-        changeASCIICondition(sASCIICondition, true); 
-        changeASCIICondition(eASCIICondition, false);
+        if (!battleManager.pokemonList[battleManager.enemyPokemon].effect.isEmpty()) {
+            changeASCIICondition(eASCIICondition, false);
+        }
+        if (!battleManager.playerTeam[battleManager.currentPokemon].effect.isEmpty()) {
+            changeASCIICondition(sASCIICondition, true); 
+        }
         double healthPercentS = battleManager.playerTeam[battleManager.currentPokemon].hp/
             battleManager.playerTeam[battleManager.currentPokemon].MAX_HP;
         setHealth(((healthPercentS>=0.50)?"green":(healthPercentS>=0.25)?"yellow":"red")
